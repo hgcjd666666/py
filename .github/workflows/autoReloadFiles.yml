@@ -1,0 +1,62 @@
+name: 手动同步文件
+
+on:
+  workflow_dispatch:  # 允许手动触发
+  schedule:
+    - cron: '0 0 * * *'  # 每天 0 点自动触发
+
+jobs:
+  sync-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出当前仓库
+        uses: actions/checkout@v3
+
+      - name: 设置环境变量
+        run: |
+          echo "CLONE_REPO=hgcjd666666/python" >> $GITHUB_ENV
+          echo "CLONE_TOKEN=${{ secrets.CLONE_REPO_TOKEN }}" >> $GITHUB_ENV  # 目标仓库令牌
+          echo "PUSH_TOKEN=${{ secrets.PUSH_REPO_TOKEN }}" >> $GITHUB_ENV  # 当前仓库令牌
+
+      - name: 克隆目标仓库
+        run: |
+          git clone https://$CLONE_TOKEN@github.com/$CLONE_REPO.git temp-repo
+
+      - name: 读取 share.txt 文件并同步文件
+        run: |
+          # 读取 share.txt 文件并去除首尾空行
+          filenames=$(sed '/^\s*$/d' temp-repo/share.txt)
+
+          # 遍历文件名
+          for filename in $filenames; do
+            # 检查文件是否存在
+            if [ -f "temp-repo/$filename" ]; then
+              # 如果文件存在，检查内容是否不同
+              if [ ! -f "./$filename" ] || ! diff -q "temp-repo/$filename" "./$filename" > /dev/null; then
+                echo "文件 $filename 内容不同，更新文件..."
+                cp "temp-repo/$filename" "./$filename"
+              fi
+            else
+              echo "文件 $filename 在目标仓库中不存在，跳过。"
+            fi
+          done
+
+          # 清理临时仓库
+          rm -rf temp-repo
+
+      - name: 提交并推送更改
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 设置当前仓库的远程地址并使用 PUSH_TOKEN 推送
+          git remote set-url origin https://$PUSH_TOKEN@github.com/${{ github.repository }}.git
+
+          # 检查是否有更改
+          if git diff --quiet; then
+            echo "没有文件更改，无需提交。"
+          else
+            git add .
+            git commit -m "自动同步文件 [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
