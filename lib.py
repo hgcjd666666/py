@@ -5,93 +5,18 @@ import lib
 使用方法：
 lib.get_md5(123)
 意思是获取字符串“123”的md5
+
+不要使用exec函数运行，否则save和load不收支持
 """
+import getpass
+import os
+import subprocess
+import sys
+
+import psutil
+
+
 # from ast import literal_eval as eval
-def save(variable_name, variable_data=None):
-	is_self = False
-	try:
-		globals()[variable_name]
-	except KeyError:
-		if variable_data == None:  # 是私有变量并且未传人值则抛出异常
-			raise ValueError("变量为私有的并且为传入值")
-		is_self = True
-	import sys
-	folder_name = sys.argv[0] + ".save"
-	import os
-	file_name = os.path.join(folder_name, variable_name)
-	os.makedirs(folder_name, exist_ok=True)
-	with open(file_name, "w") as f:
-		if is_self:
-			f.write(variable_data)
-		else:
-			f.write(globals()[variable_name])
-
-
-def load(variable_name):
-	import sys
-	folder_name = sys.argv[0] + ".save"
-	import os
-	file_name = os.path.join(folder_name, variable_name)
-	os.makedirs(folder_name, exist_ok=True)
-	try:
-		with open(file_name, "r") as f:
-			return f.read()
-		# globals()[variable_name] = f.read()
-	except FileNotFoundError:
-		# print("Error：读取保存的变量时出现问题 文件不存在")
-		# globals()[variable_name] = str()
-		return None
-
-
-def log(data):
-	from datetime import datetime
-
-	date = datetime.now()
-	time = date.strftime("%H:%M:%S")
-	date = date.strftime("%Y-%m-%d")
-	import sys
-
-	log_folder = sys.argv[0] + f".log"
-	import os
-
-	log_file = os.path.join(log_folder, f"{date}.log")
-	os.makedirs(log_folder, exist_ok=True)
-
-	with open(log_file, "a") as f:
-		f.write(f"{time}\t{data}\n")
-
-
-def debug():
-	import sys
-	import platform
-	python_version = sys.version  # 获取python信息
-	machine = platform.machine()  # 获取系统类型
-	print(f"Python {python_version} on {machine.lower()}")  # 拼接成想python命令的字符串
-	print("Type \"help\", \"copyright\", \"credits\" or \"license\" for more information.")  # 帮助信息
-	while True:
-		try:
-			code = input(">>> ")  # 获取命令
-			if len(code):  # 命令不为空就执行，否则再次获取，不然抛出“SyntaxError：invalid syntax (<string>, line 0)”与原版不符
-				run = eval(code)  # 运行命令
-				if run != None:  # 命令返回不为空才输出命令的返回值
-					if type(run) == str:
-						print(f"'{run}'")  # 是字符串就加个引号
-					else:
-						print(run)  # 不是字符串直接输出
-		except KeyboardInterrupt:
-			print("KeyboardInterrupt")  # 捕获特殊异常：^C按键
-		except EOFError:  # 捕获特殊异常：^D按键
-			# exit()
-			break
-		except SystemExit as e:  # 捕获其他异常并打印
-			break
-		except Exception as e:  # 捕获其他异常并打印
-			print(f"{str(type(e))[8:-2]}：{e}")
-
-
-def Error(e):
-	return f"{str(type(e))[8:-2]}：{e}"
-
 
 def multiplication_table():
 	for a in range(1, 10):
@@ -207,35 +132,6 @@ def key():
 '''
 
 
-def time_sleep(second):  # emmmmmmmmmm，现在发现可以用多线程。。。
-	if second == "":
-		return "作者的话：\n  这是一个样本，内容看代码\n  不看代码的话就把这个当成普通的等待来用\n\n用法：\n  print(time_sleep(second))\n  可以打印成功或者失败\n\nby~"
-	try:
-		int(second + second)
-	except:
-		print("传入参数“second”错误！")
-		print("“second”仅支持数字")
-
-	import time
-	present_time = time.time()
-	#############################################
-	#										   #
-	# 代码写在这，不要在这写等待，不要写太耗费时间的代码 #
-	#										   #
-	#############################################
-	'''
-	if
-		time.sleep(second - (present_time - time.time()))
-	'''
-	while True:
-		if time.time() == present_time + second:
-			return "运行完毕"  # 运行成功就返回“运行完毕”
-			break
-		elif time.time() > present_time + second:
-			return "错误：当前时间大于目标时间，可能是执行时的写了等待"  # 运行失败就返回错误
-			break
-
-
 def clear():
 	import platform
 	import os
@@ -243,20 +139,6 @@ def clear():
 		os.system("cls")
 	elif platform.platform().split("-")[0] == "macOS" or platform.platform().split("-")[0] == "Linux":
 		os.system("clear")
-
-
-def pause():
-	# input("按任意键继续...")
-	input("按回车继续...")
-
-
-def custom_pause(data):
-	input(data)
-
-
-def timer_open():
-	import time
-	return time.time()
 
 
 def timer_math(time):
@@ -272,13 +154,13 @@ def timer_math(time):
 			if hour > 24:
 				day = int(hour / 24)
 				# 月就算不出来了，应为有的月是30天，有的月是31天
-				back = str(day + "天" + hour + "时" + minute + "分" + time + "秒")
+				back = f"{day}天{hour}时{minute}分{time}秒"
 			else:
-				back = str(hour + "时" + minute + "分" + time + "秒")
+				back = f"{hour}时{minute}分{time}秒"
 		else:
-			back = str(minute + "分" + time + "秒")
+			back = f"{minute}分{time}秒"
 	else:
-		back = str(time + "秒")
+		back = f"{time}秒"
 	return str(back)
 
 
@@ -290,7 +172,7 @@ def error(data):
 	print("程序出现问题，请联系作者，错误内容：\n" + str(data) + "\n")
 
 
-def 文本加密(texto, key):
+def strencrypt(texto, key):
 	import string
 	from random import randint
 	# def encrypt(texto):
@@ -331,7 +213,7 @@ def 文本加密(texto, key):
 	return fintext
 
 
-def 文本解密(texto, key):
+def strdecrypt(texto, key):
 	import string
 	# def decrypt(texto):
 	texto = texto.split(".")
@@ -370,7 +252,7 @@ def 文本解密(texto, key):
 
 
 # 检测中英文字符
-def is_all_chinese(strs):
+def is_all_chinese(strs: str):
 	# 检验是否全是中文字符
 	for _char in strs:
 		if not '\u4e00' <= _char <= '\u9fa5':
@@ -378,7 +260,7 @@ def is_all_chinese(strs):
 	return True
 
 
-def is_contains_chinese(strs):
+def is_contains_chinese(strs: str):
 	# 检验是否含有中文字符
 	for _char in strs:
 		if '\u4e00' <= _char <= '\u9fa5':
@@ -386,7 +268,7 @@ def is_contains_chinese(strs):
 	return False
 
 
-def is_all_english(strs):
+def is_all_english(strs: str):
 	# 检测是否全是英文字符
 	import string
 	for i in strs:
@@ -395,7 +277,7 @@ def is_all_english(strs):
 	return True
 
 
-def is_contains_english(strs):
+def is_contains_english(strs: str):
 	# 检测是否含有英文字符
 	if (u'\u0041' <= strs <= u'\u005a') or (u'\u0061' <= strs <= u'\u007a'):
 		return True
@@ -403,58 +285,13 @@ def is_contains_english(strs):
 		return False
 
 
-def print_(*objects, sepr=" ", end="\n", t=None):
-	# 已知BUG：在输出时sleep的话控制符也会被算进去
-	# 基本颜色变化：	支持的颜色: 红 绿 黄 蓝 紫 青 白 黑 和 l红 l绿 l黄 l蓝 l紫 l青 l白 l黑[注意这个是小写的L]	‘\\’+颜色 -> 字体颜色(前景色)改变 ;	‘\\’+颜色 -> 背景色改变
-	# 特殊控制符：	‘\\’ 去除一切渲染	‘\\clear’ 清屏	‘\\under’ 添加下划线	’\\nounder’关闭下划线	‘\\anti’反色(就是前景色和后景色互换)	 ‘\\noanti’关闭反色	‘\\hide’隐藏光标	’\\show’显示光标
-	def replace(strname, *w):
-		for x in w:
-			strname = strname.replace(x[0], x[1])
-		return strname
-
-	import sys
-	import time
-	str_all = sepr.join(objects)
-	str_all = replace(str_all, ("\\黑", "\033[30m"), ("\\clear", "\033[2J\033[00H"), ("\\under", "\033[4m"),
-					  ("\\nounder", "\033[24m"), ("\\anti", "\033[7m"), ("\\noanti", "\033[27m"),
-					  ("\\hide", "\033[25l"), ("\\show", "\033[25h"), ("\\红", "\033[31m"), ("\\绿", "\033[32m"),
-					  ("\\黄", "\033[33m"), ("\\蓝", "\033[34m"), ("\\紫", "\033[35m"), ("\\青", "\033[36m"),
-					  ("\\白", "\033[37m"), ("\\l红", "\033[91m"), ("\\l绿", "\033[92m"), ("\\l黄", "\033[93m"),
-					  ("\\l蓝", "\033[94m"), ("\\l紫", "\033[95m"), ("\\l青", "\033[96m"), ("\\l白", "\033[97m"),
-					  ("\\bl红", "\033[101m"), ("\\bl绿", "\033[102m"), ("\\bl黄", "\033[103m"),
-					  ("\\bl蓝", "\033[104m"),
-					  ("\\bl紫", "\033[105m"), ("\\bl青", "\033[106m"), ("\\bl白", "\033[107m"),
-					  ("\\bl黑", "\033[100m"),
-					  ("\\b红", "\033[41m"), ("\\b绿", "\033[42m"), ("\\b黄", "\033[43m"), ("\\b蓝", "\033[44m"),
-					  ("\\b紫", "\033[45m"), ("\\b青", "\033[46m"), ("\\b白", "\033[47m"), ("\\b黑", "\033[40m"),
-					  ("\\", "\033[0m"), ("//", "\\"), )
-	if t == None:
-		sys.stdout.write(str_all)
-		sys.stdout.flush()
-	else:
-		for y in str_all:
-			sys.stdout.write(y)
-			sys.stdout.flush()
-			time.sleep(t)
-	sys.stdout.write(end)
-
-
-def Copy_To_Clipboard(string):
-	# 将需要的字符串或文字复制到剪切板.
-	from Tkinter import Tk
-	r = Tk()
-	r.withdraw()
-	r.clipboard_clear()
-	r.clipboard_append(string)
-	r.update()
-
-
-def test_system():
+def get_system():
+	# “Windows”“Linux”“macOS”
 	import platform
 	return platform.platform().split("-")[0]
 
 
-def open_web(web):
+def open_web(web: str):
 	if web == "":
 		return "使用方法：\n传入网站，例如：www.baidu.com\n或者传入iP，例如：110.242.68.66"
 	web = "http://" + str(web)
@@ -470,3 +307,186 @@ def getuser():
 			return user
 	import pwd
 	return pwd.getpwuid(os.getuid())[0]
+
+
+"""
+def save(variable_name, variable_data=None):
+	is_self = False
+	try:
+		globals()[variable_name]
+	except KeyError:
+		if variable_data == None:  # 是私有变量并且未传人值则抛出异常
+			raise ValueError("变量为私有的并且为传入值")
+		is_self = True
+	import sys
+	folder_name = sys.argv[0] + ".save"
+	import os
+	file_name = os.path.join(folder_name, variable_name)
+	os.makedirs(folder_name, exist_ok=True)
+	with open(file_name, "w") as f:
+		if is_self:
+			f.write(variable_data)
+		else:
+			f.write(globals()[variable_name])
+"""
+
+
+def save(*args, **kwargs):
+	folder_name = sys.argv[0] + ".data"  # 获取脚本名称并添加.data后缀
+	file_name = os.path.join(folder_name, variable_name)
+	if len(args) == 2 and len(kwargs) == 0:
+		# 传入两个参数（"a", 1）：第一个为变量名，第二个为变量值
+		variable_name, variable_data = args
+	elif len(args) == 0 and len(kwargs) == 1:
+		# 传入一个参数（a=1）：自动获取变量名和值
+		variable_name, variable_data = list(kwargs.items())[0]
+	else:
+		raise ValueError("参数格式不正确。请传入一个关键字参数或两个位置参数（变量名和变量值）。")
+
+	# 创建保存数据的文件夹
+	os.makedirs(folder_name, exist_ok=True)
+	# 构造文件路径
+	file_name = os.path.join(folder_name, variable_name)
+	# 将数据写入文件
+	with open(file_name, "w", encoding="UTF-8") as f:
+		f.write(str(variable_data))
+
+
+def load(variable_name):
+	folder_name = sys.argv[0] + ".data"
+	file_name = os.path.join(folder_name, variable_name)
+	os.makedirs(folder_name, exist_ok=True)
+	try:
+		with open(file_name, "r", encoding="UTF-8") as f:
+			return f.read()
+	except FileNotFoundError:
+		print("Error：读取保存的变量时出现问题 文件不存在")
+		return None
+
+
+def log(data):
+	from datetime import datetime
+
+	date = datetime.now()
+	time = date.strftime("%H:%M:%S")
+	date = date.strftime("%Y-%m-%d")
+	import sys
+
+	log_folder = sys.argv[0] + f".log"
+	import os
+
+	log_file = os.path.join(log_folder, f"{date}.log")
+	os.makedirs(log_folder, exist_ok=True)
+
+	with open(log_file, "a") as f:
+		f.write(f"{time}\t{data}\n")
+
+
+def debug():
+	import sys
+	import platform
+	python_version = sys.version  # 获取python信息
+	machine = platform.machine()  # 获取系统类型
+	print(f"Python {python_version} on {machine.lower()}")  # 拼接成想python命令的字符串
+	print("Type \"help\", \"copyright\", \"credits\" or \"license\" for more information.")  # 帮助信息
+	while True:
+		try:
+			code = input(">>> ")  # 获取命令
+			if len(code):  # 命令不为空就执行，否则再次获取，不然抛出“SyntaxError：invalid syntax (<string>, line 0)”与原版不符
+				run = eval(code)  # 运行命令（因为eval比exec多个返回才用它）
+				if run != None:  # 命令返回不为空才输出命令的返回值
+					if type(run) == str:
+						print(f"'{run}'")  # 是字符串就加个引号
+					else:
+						print(run)  # 不是字符串直接输出
+		except KeyboardInterrupt:
+			print("KeyboardInterrupt")  # 捕获特殊异常：^C按键
+		except EOFError:  # 捕获特殊异常：^D按键
+			exit()
+		except SystemExit as e:  # 捕获退出
+			exit()
+		except Exception as e:  # 捕获其他异常并打印
+			print(f"{str(type(e))[8:-2]}：{e}")
+
+
+def Error(e: Exception):
+	return f"{str(type(e))[8:-2]}：{e}"
+
+
+def get_command_input():
+	import sys
+
+	command_input = list()
+	for i in sys.argv:
+		command_input.append(i)
+	return command_input
+
+
+def gci():
+	return get_command_input()
+
+
+def rootrun(
+		cmd: str,
+		getmeg="Password:",
+		failmsg="Sorry, try again.",
+		failendmsg="sudo: 3 incorrect password attempts"):
+	for i in range(4):
+		password = getpass.getpass(getmeg)
+		sudo_cmd = ["sudo", "-S", "-v"]
+		password += "\n"  # 末尾添加换行符
+		index = subprocess.run(sudo_cmd,
+							   input=password.encode(),
+							   stdout=subprocess.DEVNULL,
+							   stderr=subprocess.DEVNULL
+							   )
+
+		# 密码正确
+		if not index.returncode:
+			if cmd:
+				sudo_cmd = ["sudo", "-S"] + [cmd]
+				password += "\n"  # 末尾添加换行符
+				index = subprocess.run(sudo_cmd, input=password.encode())
+				print(sudo_cmd)
+				print(index)
+			return 1
+
+		print(failmsg)
+		# 没机会了（重试次数达到3次）
+		if i == 2:
+			print(failendmsg)
+			return 0
+
+
+def check_root(msg: str):
+	# 获取当前进程的用户ID
+	uid = os.getuid()
+	if uid != 0:
+		raise SystemError(msg)
+
+
+def pr(data):
+	if get_parent_process_name() == "pycharm":  # Mac上的pycharm的运行功能使用sys.stdout.write会看不见输出（windows上是pycharm32/64.exe）
+		print(data)
+	else:
+		sys.stdout.write(f"\r{data}")
+
+
+def get_parent_process_name():  # 获取父进程名称
+	current_process = psutil.Process()
+	parent_process = current_process.parent()
+	if parent_process:
+		return parent_process.name()
+	else:
+		return None
+
+
+def get_null_device():
+	if os.name == "nt":  # 'nt' 表示 Windows 操作系统
+		return "NUL"
+	else:
+		return "/dev/null"
+
+
+def get_filename():
+	return sys.argv[0]

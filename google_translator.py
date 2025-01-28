@@ -1,4 +1,4 @@
-8# -*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 import json
 import os
 import random
@@ -32,66 +32,66 @@ class Google():
 		self.session = requests.Session()
 		self.session.keep_alive = False
 
-	def TL(self, a):
-		k = ""
-		b = 406644
-		b1 = 3293161072
-		jd = "."
-		b_ = "+-a^+6"
-		Zb = "+-3^+b+-f"
-		e = []
-		f = 0
-		g = 0
-		for char in a:
-			m = ord(char)
-			if m < 128:
-				e.append(m)
-			elif m < 2048:
-				e.append((m >> 6) | 192)
-				e.append(m & 63 | 128)
+	def TL(self, input_string):
+		constant_value = 406644
+		large_constant_value = 3293161072
+		delimiter = "."
+		shift_pattern1 = "+-a^+6"
+		shift_pattern2 = "+-3^+b+-f"
+		character_values = []
+		secondary_index = 0
+
+		for character in input_string:
+			character_code = ord(character)
+			if character_code < 128:
+				character_values.append(character_code)
+			elif character_code < 2048:
+				character_values.append((character_code >> 6) | 192)
+				character_values.append(character_code & 63 | 128)
 			else:
-				if 55296 <= m <= 56319 and g + 1 < len(a) and 56320 <= ord(a[g + 1]) <= 57343:
-					m = 65536 + ((m & 1023) << 10) + (ord(a[g + 1]) & 1023)
-					e.append((m >> 18) | 240)
-					e.append((m >> 12) & 63 | 128)
-					g += 1
+				if (55296 <= character_code <= 56319 and secondary_index + 1 < len(input_string) and 56320 <= ord(
+						input_string[secondary_index + 1]) <= 57343):
+					character_code = 65536 + ((character_code & 1023) << 10) + (
+							ord(input_string[secondary_index + 1]) & 1023)
+					character_values.append((character_code >> 18) | 240)
+					character_values.append((character_code >> 12) & 63 | 128)
+					secondary_index += 1
 				else:
-					e.append((m >> 12) | 224)
-					e.append((m >> 6) & 63 | 128)
-					e.append(m & 63 | 128)
-			f += 1
-			g += 1
+					character_values.append((character_code >> 12) | 224)
+					character_values.append((character_code >> 6) & 63 | 128)
+					character_values.append(character_code & 63 | 128)
+			secondary_index += 1
 
-		a = b
-		for i in range(len(e)):
-			a += e[i]
-			a = self.RL(a, b_)
+		accumulated_value = constant_value
+		for i in range(len(character_values)):
+			accumulated_value += character_values[i]
+			accumulated_value = self.RL(accumulated_value, shift_pattern1)
 
-		a = self.RL(a, Zb)
-		a ^= b1
-		if a < 0:
-			a = (a & 2147483647) + 2147483648
-		a %= 1000000
-		return str(a) + jd + str(a ^ b)
+		accumulated_value = self.RL(accumulated_value, shift_pattern2)
+		accumulated_value ^= large_constant_value
+		if accumulated_value < 0:
+			accumulated_value = (accumulated_value & 2147483647) + 2147483648
+		accumulated_value %= 1000000
+		return str(accumulated_value) + delimiter + str(accumulated_value ^ constant_value)
 
-	def RL(self, a, b):
-		t = "a"
-		Yb = "+"
-		for i in range(0, len(b) - 2, 3):
-			d = b[i + 2]
-			if d >= t:
-				d = ord(d) - 87
+	def RL(self, value, pattern):
+		base_character = 'a'
+		operation_character = '+'
+		for i in range(0, len(pattern) - 2, 3):
+			operation_code = pattern[i + 2]
+			if operation_code >= base_character:
+				shift_value = ord(operation_code) - 87
 			else:
-				d = int(d)
-			if b[i + 1] == Yb:
-				d = a >> d
+				shift_value = int(operation_code)
+			if pattern[i + 1] == operation_character:
+				shift_value = value >> shift_value
 			else:
-				d = a << d
-			if b[i] == Yb:
-				a = (a + d) & 4294967295
+				shift_value = value << shift_value
+			if pattern[i] == operation_character:
+				value = (value + shift_value) & 4294967295
 			else:
-				a ^= d
-		return a
+				value ^= shift_value
+		return value
 
 	def ip_loader(self):
 		# ip文件路径
@@ -142,8 +142,8 @@ class Google():
 		ip = self.ip_loader()
 		baseUrl = 'http://' + ip + '/translate_a/single'
 		baseUrl += '?client=webapp&'  # 这里client改成webapp后翻译的效果好一些 t翻译的比较差 ..
-		baseUrl += 'sl=auto&'
-		baseUrl += 'tl=' + str(tl) + '&'
+		baseUrl += 'sl=' + str(sl) + '&'  # 原语言
+		baseUrl += 'tl=' + str(tl) + '&'  # 目标语言
 		baseUrl += 'hl=zh-CN&'
 		baseUrl += 'dt=at&'
 		baseUrl += 'dt=bd&'
@@ -164,9 +164,9 @@ class Google():
 		baseUrl += 'ssel=0&'
 		baseUrl += 'tsel=0&'
 		baseUrl += 'kc=2&'
-		baseUrl += 'tk=' + str(tk) + '&'
+		baseUrl += 'tk=' + str(tk) + '&'  # 校验
 		content = urllib.parse.quote(text)
-		baseUrl += 'q=' + content
+		baseUrl += 'q=' + content  # 待翻译文本
 		return baseUrl
 
 	def getHtml(self, session, url, headers):
@@ -183,6 +183,7 @@ class Google():
 
 		if res.status_code != 200:
 			match = re.search(r'<title>(.*?)</title>', res.text, re.DOTALL)
+			# requests.get('https://backend.cyzone.cn/system/index/dingding?id=bestla&text=谷歌翻译失败：' + match.group(1) if match else str(res.status_code))
 			print('谷歌翻译失败：' + match.group(1) if match else str(res.status_code))
 			return ''
 		else:

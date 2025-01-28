@@ -1,0 +1,7 @@
+/__pycache__/
+/.idea/
+/*.py.log/
+/*.py.data/
+*.env
+/*.py.output/
+*.bak
