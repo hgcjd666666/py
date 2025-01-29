@@ -1,18 +1,19 @@
 # -*- coding:utf-8 -*-
-import json
 import os
 import random
 import re
-import time
 import urllib
-import urllib.request
 import urllib.parse
+import urllib.request
+
 import requests
+
+import time
 
 
 class Google():
 	def __init__(self):
-
+		
 		self.lang_dict = {
 			'中文': 'zh-CN',
 			'英文': 'en',
@@ -21,17 +22,17 @@ class Google():
 			'日文': 'ja',
 			'韩文': 'ko'
 		}
-
+		
 		self.headers = {
 			'Host': 'translate.googleapis.com',
 			'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0;)',
 			# 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36'
 		}
-
+		
 		self.url = 'https://translate.google.com/translate_a/single'
 		self.session = requests.Session()
 		self.session.keep_alive = False
-
+	
 	def TL(self, input_string):
 		constant_value = 406644
 		large_constant_value = 3293161072
@@ -40,7 +41,7 @@ class Google():
 		shift_pattern2 = "+-3^+b+-f"
 		character_values = []
 		secondary_index = 0
-
+		
 		for character in input_string:
 			character_code = ord(character)
 			if character_code < 128:
@@ -61,19 +62,19 @@ class Google():
 					character_values.append((character_code >> 6) & 63 | 128)
 					character_values.append(character_code & 63 | 128)
 			secondary_index += 1
-
+		
 		accumulated_value = constant_value
 		for i in range(len(character_values)):
 			accumulated_value += character_values[i]
 			accumulated_value = self.RL(accumulated_value, shift_pattern1)
-
+		
 		accumulated_value = self.RL(accumulated_value, shift_pattern2)
 		accumulated_value ^= large_constant_value
 		if accumulated_value < 0:
 			accumulated_value = (accumulated_value & 2147483647) + 2147483648
 		accumulated_value %= 1000000
 		return str(accumulated_value) + delimiter + str(accumulated_value ^ constant_value)
-
+	
 	def RL(self, value, pattern):
 		base_character = 'a'
 		operation_character = '+'
@@ -92,11 +93,11 @@ class Google():
 			else:
 				value ^= shift_value
 		return value
-
+	
 	def ip_loader(self):
 		# ip文件路径
 		file_path = 'google_translate_ips.txt'
-
+		
 		if self.file_over_an_hour(file_path) is False:
 			# 打开文件
 			with open(file_path, 'r') as file:
@@ -118,9 +119,9 @@ class Google():
 					# 将结果写入到ip.txt文件中
 					with open(file_path, 'w') as file:
 						file.write(ip_text)
-
+		
 		return random.choice(ip_list) if ip_list else ''
-
+	
 	def file_over_an_hour(self, file_path):
 		try:
 			# 获取文件的最后修改时间戳
@@ -136,7 +137,7 @@ class Google():
 				return False
 		except Exception as e:
 			return None
-
+	
 	def buildUrl(self, text, tk, sl, tl):
 		# baseUrl = 'https://translate.google.com/translate_a/single'
 		ip = self.ip_loader()
@@ -168,19 +169,19 @@ class Google():
 		content = urllib.parse.quote(text)
 		baseUrl += 'q=' + content  # 待翻译文本
 		return baseUrl
-
+	
 	def getHtml(self, session, url, headers):
 		try:
 			return session.get(url, headers=headers)
 		except Exception as e:
 			return None
-
+	
 	def translate(self, from_lang, to_lang, text):
 		tk = self.TL(text)
 		url = self.buildUrl(text, tk, from_lang, to_lang)
 		# print(url)
 		res = self.getHtml(self.session, url, self.headers)
-
+		
 		if res.status_code != 200:
 			match = re.search(r'<title>(.*?)</title>', res.text, re.DOTALL)
 			# requests.get('https://backend.cyzone.cn/system/index/dingding?id=bestla&text=谷歌翻译失败：' + match.group(1) if match else str(res.status_code))

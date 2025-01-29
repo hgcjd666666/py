@@ -7,7 +7,7 @@ def merge_files(source_dir, output_file):
 	files = [f for f in os.listdir(source_dir) if os.path.isfile(os.path.join(source_dir, f))]
 	# 按照文件名排序，确保合并的顺序是正确的
 	files.sort()
-
+	
 	# 创建输出文件
 	with open(output_file, 'wb') as _:
 		pass

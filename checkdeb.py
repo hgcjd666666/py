@@ -38,7 +38,7 @@ def format_size(size):
 def print_packages(packages):
 	# 计算最长的包名长度
 	max_length = max(len(pkg['pkgname']) for pkg in packages)
-
+	
 	# 打印每个包，自动对齐并转换大小单位
 	for pkg in packages:
 		formatted_size = format_size(pkg['size'])  # 格式化单位

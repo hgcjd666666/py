@@ -1,11 +1,10 @@
 import os
-import shutil
 
 
 def split_file(file_path, chunk_size=512 * 1024 * 1024):  # 按照每512mb一个文件分割
 	# 获取文件名和后缀
 	file_name, file_extension = os.path.splitext(os.path.basename(file_path))
-
+	
 	# 读取文件
 	with open(file_path, 'rb') as file_:
 		chunk_number = 1

@@ -1,11 +1,12 @@
 import os
+import random
+import sys
 import threading
+
 from pygame import mixer
 
 import lib
 import time
-import random
-import sys
 
 
 class Data:
@@ -48,7 +49,7 @@ volume <1-100的数>：调节音量至<1-100的数>%
 		self.path: str = sys.argv[0] + ".data"  # 查找歌曲文件的路径
 		self.is_paused: bool = False  # 是否暂停播放
 		self.volume: float = 0.5  # 默认音量为50%
-
+	
 	def get_current_song_name(self, _current_song_index: int) -> str:  # 正在播放的歌曲名
 		filepath = self.playlist[_current_song_index]
 		# 因为检索文件时及时是Windows也会用/所以如果没有/就说明在同一文件夹下，有就按/分就行
@@ -62,14 +63,14 @@ def get_music_files(_data: Data):
 	for f in os.listdir(_data.path):
 		if f.endswith(supported_formats):
 			supported_files.append(f"{_data.path}/{f}")
-
+	
 	if data.sort_method == "name":
 		# 按照文件名排序
 		_data.playlist = sorted(supported_files)
 	elif data.sort_method == "addtime":
 		# 按照文件的创建时间排序
 		_data.playlist = sorted(supported_files, key=lambda x: os.path.getctime(x))
-
+	
 	print("播放列表:")
 	for i in range(len(_data.playlist)):
 		print(f"{i}. {_data.get_current_song_name(i)}")
@@ -113,7 +114,7 @@ def input_thread(_data: Data):
 									_data.player.play()
 								else:
 									print("无效的歌曲序号。")
-
+					
 					case "time":
 						match len(parts):
 							case 1:
@@ -122,7 +123,7 @@ def input_thread(_data: Data):
 								time_str = parts[1].replace(":", "")
 								minutes, seconds = divmod(int(time_str), 100)
 								_data.player.set_pos(minutes * 60 + seconds)
-
+					
 					case "sort":
 						match len(parts):
 							case 1:
@@ -134,7 +135,7 @@ def input_thread(_data: Data):
 									get_music_files(_data)
 								else:
 									print("无效的排序方式。")
-
+					
 					case "mode":
 						match len(parts):
 							case 1:
@@ -146,19 +147,19 @@ def input_thread(_data: Data):
 									print(f"播放模式已更改为：{play_mode}")
 								else:
 									print("无效的播放模式。可用模式：sequential, random")
-
+					
 					case "w":
 						_data.current_song_index = (_data.current_song_index - 1) % len(_data.playlist)
 						_data.player.load(_data.playlist[_data.current_song_index])
 						_data.player.play()
-
+					
 					case "s":
 						play_next_song(_data)
-
+					
 					case "exit":
 						_data.running = False
 						print("播放器即将退出...")
-
+					
 					case "pause":
 						if not _data.is_paused:
 							_data.player.pause()
@@ -166,7 +167,7 @@ def input_thread(_data: Data):
 							print("播放已暂停")
 						else:
 							print("播放已经暂停，无需重复暂停")
-
+					
 					case "resume":
 						if _data.is_paused:
 							_data.player.unpause()
@@ -174,7 +175,7 @@ def input_thread(_data: Data):
 							print("播放已恢复")
 						else:
 							print("播放未暂停，无需恢复")
-
+					
 					case "volume":
 						volume = float(parts[1]) / 100
 						if 0.0 <= volume <= 1.0:
@@ -183,7 +184,7 @@ def input_thread(_data: Data):
 							print(f"音量已设置为{parts[1]}%")
 						else:
 							print("音量∉(0,100)（音量不在0-100之间）")
-
+					
 					case _ if cmd.endswith("/?"):
 						command_name = cmd[:-2].strip()
 						if command_name in _data.command_help:
@@ -191,7 +192,7 @@ def input_thread(_data: Data):
 						else:
 							print("命令不存在")
 							print(_data.help_text)
-
+					
 					case _:
 						print("命令不存在")
 						print(_data.help_text)
@@ -206,10 +207,10 @@ if __name__ == "__main__":
 	get_music_files(data)
 	data.player.load(data.playlist[data.current_song_index])
 	data.player.play()
-
+	
 	data.input_thread = threading.Thread(target=input_thread, args=(data,), name="InputHandler")
 	data.input_thread.start()
-
+	
 	# 主线程循环，检查音乐是否播放完毕
 	while data.running:
 		if (not data.player.get_busy()) and (not data.is_paused):

@@ -1,10 +1,7 @@
-import os, hashlib
-
-
 def delete_empty_folders(path):
 	# 存储被删除的空文件夹路径
 	deleted_folders = []
-
+	
 	# 使用os.walk遍历目录
 	for root, dirs, files in os.walk(path, topdown=False):
 		# 遍历当前目录下的文件夹
@@ -18,8 +15,8 @@ def delete_empty_folders(path):
 				print(f"删除空文件夹：{dir_path}")
 
 
-import os
 import hashlib
+import os
 
 
 def get_file_hash(file_path, hash_func):
@@ -42,7 +39,7 @@ def find_duplicate_files(directory):
 		for file_ in files:
 			file_path = os.path.join(root, file_)
 			file_size = os.path.getsize(file_path)
-
+			
 			# 检查文件大小是否重复
 			if file_size in file_sizes:
 				# 如果文件大小相同，检查md5

@@ -47,28 +47,28 @@ def QRcode(QRcode_data, fill_color, back_color, path):
 	# fill_color = "black" back_color = "white"
 	img = qr.make_image(fill_color=fill_color, back_color=back_color)
 	img.show()
-
+	
 	# 获取img尺寸
 	width = img.size[0] // 4
-
+	
 	height = img.size[1] // 4
 	icon = Image.open(path)
-
+	
 	# 获取icon的尺寸
 	icon_w = icon.size[0]
 	icon_h = icon.size[1]
-
+	
 	if icon_w > width:
 		icon_w = width
 	if icon_h > height:
 		icon_h = height
-
+	
 	# resize()重新定义尺寸
 	icon = icon.resize((icon_w, icon_h))
-
+	
 	x = (img.size[0] - icon_w) // 2
 	y = (img.size[1] - icon_h) // 2
-
+	
 	# paste(obj, (x,y)) 粘贴
 	img.paste(icon, (x, y))
 	img.show()
@@ -182,34 +182,34 @@ def strencrypt(texto, key):
 	abecedario2 = []
 	nummoves = randint(1, len(abecedario))
 	indexs = []
-
+	
 	texttoenc = []
-
+	
 	for l in range(0, len(abecedario)):
 		abecedario2.append(abecedario[l])
-
+	
 	for let in range(0, len(texto)):
 		texttoenc.append(texto[let])
-
+	
 	for letter in texto:
 		indexs.append(abecedario2.index(letter))
-
+	
 	for move in range(0, nummoves):
 		abecedario2 += abecedario2.pop(0)
-
+	
 	texto = []
-
+	
 	for i in range(0, len(indexs)):
 		texto.append(abecedario2[indexs[i]])
 		texto.append(".")
-
+	
 	fintext = ""
-
+	
 	for letter2 in range(0, len(texto), 2):
 		fintext += texto[letter2]
-
+	
 	fintext = str(nummoves) + "." + fintext
-
+	
 	return fintext
 
 
@@ -226,28 +226,28 @@ def strdecrypt(texto, key):
 	finalindexs = []
 	textode1 = texto[1]
 	textode2 = []
-
+	
 	for l in range(0, len(abecedario)):
 		abecedario2.append(abecedario[l])
-
+	
 	for letter in range(0, len(textode1)):
 		textode2.append(textode1[letter])
-
+	
 	for index in range(0, len(textode1)):
 		indexs.append(abecedario.index(textode1[index]))
-
+	
 	for move in range(nummoves, 0):
 		abecedario2 += abecedario2.pop(27)
-
+	
 	for value in indexs:
 		newval = value - nummoves
 		finalindexs.append(newval)
-
+	
 	textofin = ""
-
+	
 	for i in range(0, len(finalindexs)):
 		textofin += abecedario2[finalindexs[i]]
-
+	
 	return textofin
 
 
@@ -333,7 +333,6 @@ def save(variable_name, variable_data=None):
 
 def save(*args, **kwargs):
 	folder_name = sys.argv[0] + ".data"  # 获取脚本名称并添加.data后缀
-	file_name = os.path.join(folder_name, variable_name)
 	if len(args) == 2 and len(kwargs) == 0:
 		# 传入两个参数（"a", 1）：第一个为变量名，第二个为变量值
 		variable_name, variable_data = args
@@ -342,7 +341,8 @@ def save(*args, **kwargs):
 		variable_name, variable_data = list(kwargs.items())[0]
 	else:
 		raise ValueError("参数格式不正确。请传入一个关键字参数或两个位置参数（变量名和变量值）。")
-
+	
+	file_name = os.path.join(folder_name, variable_name)
 	# 创建保存数据的文件夹
 	os.makedirs(folder_name, exist_ok=True)
 	# 构造文件路径
@@ -366,18 +366,18 @@ def load(variable_name):
 
 def log(data):
 	from datetime import datetime
-
+	
 	date = datetime.now()
 	time = date.strftime("%H:%M:%S")
 	date = date.strftime("%Y-%m-%d")
 	import sys
-
+	
 	log_folder = sys.argv[0] + f".log"
 	import os
-
+	
 	log_file = os.path.join(log_folder, f"{date}.log")
 	os.makedirs(log_folder, exist_ok=True)
-
+	
 	with open(log_file, "a") as f:
 		f.write(f"{time}\t{data}\n")
 
@@ -415,7 +415,7 @@ def Error(e: Exception):
 
 def get_command_input():
 	import sys
-
+	
 	command_input = list()
 	for i in sys.argv:
 		command_input.append(i)
@@ -436,11 +436,11 @@ def rootrun(
 		sudo_cmd = ["sudo", "-S", "-v"]
 		password += "\n"  # 末尾添加换行符
 		index = subprocess.run(sudo_cmd,
-							   input=password.encode(),
-							   stdout=subprocess.DEVNULL,
-							   stderr=subprocess.DEVNULL
-							   )
-
+		                       input=password.encode(),
+		                       stdout=subprocess.DEVNULL,
+		                       stderr=subprocess.DEVNULL
+		                       )
+		
 		# 密码正确
 		if not index.returncode:
 			if cmd:
@@ -450,7 +450,7 @@ def rootrun(
 				print(sudo_cmd)
 				print(index)
 			return 1
-
+		
 		print(failmsg)
 		# 没机会了（重试次数达到3次）
 		if i == 2:

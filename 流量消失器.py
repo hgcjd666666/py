@@ -1,8 +1,10 @@
-import requests
 import threading
-import time
-import lib
+
+import requests
 import urllib3
+
+import lib
+import time
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # 禁用警告
 import random
@@ -65,11 +67,11 @@ def download_file(_data):
 	while _data.running:
 		try:
 			response = _data.session.get(random.choice(_data.url),
-										 headers=_data.headers,  # 设定请求头
-										 stream=True,  # 流式传输
-										 timeout=10,  # 设置超时时间
-										 verify=False  # 不验证证书
-										 )
+			                             headers=_data.headers,  # 设定请求头
+			                             stream=True,  # 流式传输
+			                             timeout=10,  # 设置超时时间
+			                             verify=False  # 不验证证书
+			                             )
 			for chunk in response.iter_content(chunk_size=8192):
 				if not _data.running:
 					break

@@ -1,0 +1,3 @@
+pycryptodome
+pywin32
+wmi
