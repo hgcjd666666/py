@@ -1,76 +1,125 @@
-def delete_empty_folders(path):
-	# 存储被删除的空文件夹路径
-	deleted_folders = []
-	
-	# 使用os.walk遍历目录
-	for root, dirs, files in os.walk(path, topdown=False):
-		# 遍历当前目录下的文件夹
-		for dir in dirs:
-			dir_path = os.path.join(root, dir)
-			# 检查文件夹是否为空
-			if not os.listdir(dir_path):
-				# 如果为空，则删除该文件夹
-				os.rmdir(dir_path)
-				# 输出被删除的文件夹路径
-				print(f"删除空文件夹：{dir_path}")
-
-
 import hashlib
 import os
 
 
-def get_file_hash(file_path, hash_func):
-	"""
-	计算文件的hash值
-	"""
-	hash_obj = hash_func()
-	with open(file_path, 'rb') as f:
-		chunk = f.read(4096)
-		while chunk:
-			hash_obj.update(chunk)
-			chunk = f.read(4096)
-	return hash_obj.hexdigest()
+def calculate_md5(file_path):
+	"""计算文件的MD5哈希值"""
+	md5 = hashlib.md5()
+	try:
+		with open(file_path, 'rb') as f:
+			for chunk in iter(lambda: f.read(4096), b''):
+				md5.update(chunk)
+		return md5.hexdigest()
+	except OSError as e:
+		print(f"无法读取文件 {file_path}: {e}")
+		return None
 
 
 def find_duplicate_files(directory):
-	file_sizes = {}
-	duplicate_files = []
-	for root, dirs, files in os.walk(directory):
-		for file_ in files:
-			file_path = os.path.join(root, file_)
-			file_size = os.path.getsize(file_path)
-			
-			# 检查文件大小是否重复
-			if file_size in file_sizes:
-				# 如果文件大小相同，检查md5
-				file_md5 = get_file_hash(file_path, hashlib.md5)
-				if file_md5 in file_sizes[file_size]:
-					# 如果md5相同，检查sha512
-					file_sha512 = get_file_hash(file_path, hashlib.sha512)
-					for dup_file_path in file_sizes[file_size][file_md5]:
-						if get_file_hash(dup_file_path, hashlib.sha512) == file_sha512:
-							# 如果sha512也相同，则添加到重复文件列表
-							duplicate_files.append((file_path, dup_file_path))
-				else:
-					# 如果md5不同，添加到字典
-					file_sizes[file_size][file_md5] = [file_path]
-			else:
-				# 如果文件大小不同，添加到字典
-				file_sizes[file_size] = {get_file_hash(file_path, hashlib.md5): [file_path]}
-	return duplicate_files
+	"""查找重复文件并返回分组列表"""
+	size_dict = {}
+	directory = os.path.abspath(directory)
+	
+	# 按文件大小分组
+	for root, _, files in os.walk(directory):
+		for file in files:
+			path = os.path.join(root, file)
+			if os.path.isfile(path):
+				try:
+					size = os.path.getsize(path)
+				except OSError as e:
+					print(f"获取文件大小失败 {path}: {e}")
+					continue
+				size_dict.setdefault(size, []).append(path)
+	
+	# 对相同大小文件进行MD5校验
+	duplicates = []
+	for size, paths in size_dict.items():
+		if len(paths) < 2:
+			continue
+		
+		md5_dict = {}
+		for path in paths:
+			md5 = calculate_md5(path)
+			if md5 is not None:
+				md5_dict.setdefault(md5, []).append(path)
+		
+		for md5_group in md5_dict.values():
+			if len(md5_group) > 1:
+				sorted_group = sorted(md5_group, key=lambda x: len(x))
+				duplicates.append(sorted_group)
+	
+	return duplicates
+
+
+def delete_duplicates(duplicates_list):
+	"""删除重复文件模块"""
+	deleted_count = 0
+	for group in duplicates_list:
+		# 保留第一个文件（路径最短的），删除其他
+		to_delete = group[1:]
+		for path in to_delete:
+			try:
+				os.remove(path)
+				print(f"已删除：{path}")
+				deleted_count += 1
+			except Exception as e:
+				print(f"删除失败 [{path}]: {e}")
+	print(f"\n共删除 {deleted_count} 个重复文件")
+
+
+def delete_empty_folders(directory):
+	"""递归删除空文件夹（无需确认）"""
+	deleted_count = 0
+	directory = os.path.abspath(directory)
+	
+	# 自底向上遍历目录树（关键！）
+	for root, dirs, files in os.walk(directory, topdown=False):
+		for dir_name in dirs:
+			dir_path = os.path.join(root, dir_name)
+			try:
+				if not os.listdir(dir_path):  # 检查是否为空
+					os.rmdir(dir_path)
+					print(f"已删除空文件夹：{dir_path}")
+					deleted_count += 1
+			except Exception as e:
+				print(f"删除失败 [{dir_path}]: {e}")
+	
+	print(f"共清理 {deleted_count} 个空文件夹")
 
 
 if __name__ == "__main__":
-	choce = input("""功能列表：
-	[1]查找重复文件
-	[2]清理空文件夹
+	choice = input("""功能列表：
+    [1] 查找重复文件
+    [2] 清理空文件夹
 请选择一个功能使用：""")
-	input_path = input("输入需要处理的路径：")
-	if choce == "1":
-		# 打印所有重复的文件路径
-		for dup in find_duplicate_files(input_path):
-			print(f"重复文件：“{dup[0]}”和“{dup[1]}”")
-	elif choce == "2":
+	
+	input_path = input("输入需要处理的路径：").strip()
+	if not os.path.isdir(input_path):
+		print("错误：目录不存在")
+		exit()
+	
+	if choice == "1":
+		duplicates = find_duplicate_files(input_path)
+		if duplicates:
+			print("\n发现以下重复文件组（每组保留第一个文件）：")
+			for i, group in enumerate(duplicates, 1):
+				print(f"\n组 {i}（共 {len(group)} 个重复）:")
+				print(f"  保留：{group[0]}")
+				for path in group[1:]:
+					print(f"  删除：{path}")
+			
+			# 新增删除确认
+			if input("\n是否删除重复文件？[y/n] ").lower() == 'y':
+				delete_duplicates(duplicates)
+			else:
+				print("取消删除操作")
+		else:
+			print("未发现重复文件")
+	
+	elif choice == "2":
+		print("\n开始清理空文件夹...")
 		delete_empty_folders(input_path)
+	
 	else:
-		print("选项错误！")
+		print("无效选项！")

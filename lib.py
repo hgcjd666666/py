@@ -8,12 +8,20 @@ lib.get_md5(123)
 
 不要使用exec函数运行，否则save和load不收支持
 """
+import datetime
 import getpass
+import hashlib
 import os
+import platform
+import pwd
+import random
+import string
 import subprocess
 import sys
 
 import psutil
+
+import time
 
 
 # from ast import literal_eval as eval
@@ -26,62 +34,15 @@ def multiplication_table():
 
 
 def current_time():
-	import time
-	import sys
 	while True:
 		sys.stdout.write(time.strftime("\r%Y/%m/%d %H:%M:%S"))
 
 
-def QRcode(QRcode_data, fill_color, back_color, path):
-	QRcode_data = str(QRcode_data)
-	fill_color = str(fill_color)
-	back_color = str(back_color)
-	path = str(path)
-	# QRcode_data是二维码内容；fill_color是二维码颜色；back_color是二维码的背景颜色；path是文件保存路径
-	import qrcode
-	from PIL import Image
-	# QRCode 类名
-	qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H, border=1)
-	qr.add_data(str(QRcode_data))
-	qr.make()
-	# fill_color = "black" back_color = "white"
-	img = qr.make_image(fill_color=fill_color, back_color=back_color)
-	img.show()
-	
-	# 获取img尺寸
-	width = img.size[0] // 4
-	
-	height = img.size[1] // 4
-	icon = Image.open(path)
-	
-	# 获取icon的尺寸
-	icon_w = icon.size[0]
-	icon_h = icon.size[1]
-	
-	if icon_w > width:
-		icon_w = width
-	if icon_h > height:
-		icon_h = height
-	
-	# resize()重新定义尺寸
-	icon = icon.resize((icon_w, icon_h))
-	
-	x = (img.size[0] - icon_w) // 2
-	y = (img.size[1] - icon_h) // 2
-	
-	# paste(obj, (x,y)) 粘贴
-	img.paste(icon, (x, y))
-	img.show()
-
-
-def get_md5(data):
-	data = str(data)
-	import hashlib
-	if isinstance(data, str):
-		data = data.encode("utf-8")
-		md = hashlib.md5()
-		md.update(data)
-		return md.hexdigest()
+def md5(data: bytes):
+	# if isinstance(data, bytes):
+	md5 = hashlib.md5()
+	md5.update(data)
+	return md5.hexdigest()
 
 
 # 之前写的密钥，现在发现密钥可以填任意的字符串
@@ -133,8 +94,6 @@ def key():
 
 
 def clear():
-	import platform
-	import os
 	if platform.platform().split("-")[0] == "Windows":
 		os.system("cls")
 	elif platform.platform().split("-")[0] == "macOS" or platform.platform().split("-")[0] == "Linux":
@@ -143,10 +102,9 @@ def clear():
 
 def timer_math(time):
 	if time == "":
-		import redoam
-		time = redoam.readint(1, 2333)
-		return "使用方法：\n直接调用即可\n例子：\nprint(timer_math(timer_math(" + time + ")))\n输出：\n" + timer_math(
-			timer_math(time))
+		time = random.randint(1, 2333)
+		return ("使用方法：\n直接调用即可\n例子：\nprint(timer_math(timer_math(" +
+		        time + ")))\n输出：\n" + timer_math(timer_math(time)))
 	if time > 60:
 		minute = int(time / 60)
 		if minute > 60:
@@ -173,14 +131,12 @@ def error(data):
 
 
 def strencrypt(texto, key):
-	import string
-	from random import randint
 	# def encrypt(texto):
 	if key == "null":
 		key = "áéíóúÁÉÍÚÓàèìòùÀÈÌÒÙäëïöüÄËÏÖÜñÑ´"
 	abecedario = string.printable + key
 	abecedario2 = []
-	nummoves = randint(1, len(abecedario))
+	nummoves = random.randint(1, len(abecedario))
 	indexs = []
 	
 	texttoenc = []
@@ -214,7 +170,6 @@ def strencrypt(texto, key):
 
 
 def strdecrypt(texto, key):
-	import string
 	# def decrypt(texto):
 	texto = texto.split(".")
 	if key == "null":
@@ -270,7 +225,6 @@ def is_contains_chinese(strs: str):
 
 def is_all_english(strs: str):
 	# 检测是否全是英文字符
-	import string
 	for i in strs:
 		if i not in string.ascii_lowercase + string.ascii_uppercase:
 			return False
@@ -287,25 +241,14 @@ def is_contains_english(strs: str):
 
 def get_system():
 	# “Windows”“Linux”“macOS”
-	import platform
 	return platform.platform().split("-")[0]
 
 
-def open_web(web: str):
-	if web == "":
-		return "使用方法：\n传入网站，例如：www.baidu.com\n或者传入iP，例如：110.242.68.66"
-	web = "http://" + str(web)
-	import webbrowser
-	webbrowser.open(web)
-
-
 def getuser():
-	import os
 	for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
 		user = os.environ.get(name)
 		if user:
 			return user
-	import pwd
 	return pwd.getpwuid(os.getuid())[0]
 
 
@@ -318,9 +261,7 @@ def save(variable_name, variable_data=None):
 		if variable_data == None:  # 是私有变量并且未传人值则抛出异常
 			raise ValueError("变量为私有的并且为传入值")
 		is_self = True
-	import sys
 	folder_name = sys.argv[0] + ".save"
-	import os
 	file_name = os.path.join(folder_name, variable_name)
 	os.makedirs(folder_name, exist_ok=True)
 	with open(file_name, "w") as f:
@@ -365,26 +306,20 @@ def load(variable_name):
 
 
 def log(data):
-	from datetime import datetime
-	
-	date = datetime.now()
+	date = datetime.datetime.now()
 	time = date.strftime("%H:%M:%S")
 	date = date.strftime("%Y-%m-%d")
-	import sys
 	
 	log_folder = sys.argv[0] + f".log"
-	import os
 	
 	log_file = os.path.join(log_folder, f"{date}.log")
 	os.makedirs(log_folder, exist_ok=True)
 	
-	with open(log_file, "a") as f:
+	with open(log_file, "a", encoding="UTF-8") as f:
 		f.write(f"{time}\t{data}\n")
 
 
 def debug():
-	import sys
-	import platform
 	python_version = sys.version  # 获取python信息
 	machine = platform.machine()  # 获取系统类型
 	print(f"Python {python_version} on {machine.lower()}")  # 拼接成想python命令的字符串
@@ -414,8 +349,6 @@ def Error(e: Exception):
 
 
 def get_command_input():
-	import sys
-	
 	command_input = list()
 	for i in sys.argv:
 		command_input.append(i)
@@ -490,3 +423,16 @@ def get_null_device():
 
 def get_filename():
 	return sys.argv[0]
+
+
+def file_md5(file_path):
+	"""计算文件的MD5哈希值"""
+	md5 = hashlib.md5()
+	try:
+		with open(file_path, 'rb') as f:
+			for chunk in iter(lambda: f.read(4096), b''):
+				md5.update(chunk)
+		return md5.hexdigest()
+	except OSError as e:
+		print(f"无法读取文件 {file_path}: {e}")
+		return None
