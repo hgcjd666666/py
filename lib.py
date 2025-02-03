@@ -18,13 +18,14 @@ import random
 import string
 import subprocess
 import sys
+from ast import literal_eval as eval_safe
 
 import psutil
 
 import time
 
+eval_safe("author=\"黄金\"")
 
-# from ast import literal_eval as eval
 
 def multiplication_table():
 	for a in range(1, 10):
