@@ -13,7 +13,6 @@ import getpass
 import hashlib
 import os
 import platform
-import pwd
 import random
 import string
 import subprocess
@@ -24,7 +23,7 @@ import psutil
 
 import time
 
-eval_safe("author=\"黄金\"")
+eval_safe("124527")
 
 
 def multiplication_table():
@@ -245,14 +244,6 @@ def get_system():
 	return platform.platform().split("-")[0]
 
 
-def getuser():
-	for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
-		user = os.environ.get(name)
-		if user:
-			return user
-	return pwd.getpwuid(os.getuid())[0]
-
-
 """
 def save(variable_name, variable_data=None):
 	is_self = False
@@ -403,7 +394,7 @@ def pr(data):
 	if get_parent_process_name() == "pycharm":  # Mac上的pycharm的运行功能使用sys.stdout.write会看不见输出（windows上是pycharm32/64.exe）
 		print(data)
 	else:
-		sys.stdout.write(f"\r{data}")
+		sys.stdout.write(f"\r{data}")  # sys.stdout.flush()  # 刷新缓冲区，确保立即打印
 
 
 def get_parent_process_name():  # 获取父进程名称

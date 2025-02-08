@@ -1,3 +1,7 @@
+requests
+psutil
+pygame
+urllib3
 pycryptodome
 pywin32
-wmi
+WMI
