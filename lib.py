@@ -8,6 +8,7 @@ lib.get_md5(123)
 
 不要使用exec函数运行，否则save和load不收支持
 """
+import ctypes
 import datetime
 import getpass
 import hashlib
@@ -100,25 +101,25 @@ def clear():
 		os.system("clear")
 
 
-def timer_math(time):
-	if time == "":
-		time = random.randint(1, 2333)
+def timer_math(time_):
+	if time_ == "":
+		time_ = random.randint(1, 2333)
 		return ("使用方法：\n直接调用即可\n例子：\nprint(timer_math(timer_math(" +
-		        time + ")))\n输出：\n" + timer_math(timer_math(time)))
-	if time > 60:
-		minute = int(time / 60)
+		        time_ + ")))\n输出：\n" + timer_math(timer_math(time_)))
+	if time_ > 60:
+		minute = int(time_ / 60)
 		if minute > 60:
 			hour = int(minute / 60)
 			if hour > 24:
 				day = int(hour / 24)
 				# 月就算不出来了，应为有的月是30天，有的月是31天
-				back = f"{day}天{hour}时{minute}分{time}秒"
+				back = f"{day}天{hour}时{minute}分{time_}秒"
 			else:
-				back = f"{hour}时{minute}分{time}秒"
+				back = f"{hour}时{minute}分{time_}秒"
 		else:
-			back = f"{minute}分{time}秒"
+			back = f"{minute}分{time_}秒"
 	else:
-		back = f"{time}秒"
+		back = f"{time_}秒"
 	return str(back)
 
 
@@ -351,50 +352,47 @@ def gci():
 	return get_command_input()
 
 
-def rootrun(
-		cmd: str,
-		getmeg="Password:",
-		failmsg="Sorry, try again.",
-		failendmsg="sudo: 3 incorrect password attempts"):
-	for i in range(4):
-		password = getpass.getpass(getmeg)
-		sudo_cmd = ["sudo", "-S", "-v"]
-		password += "\n"  # 末尾添加换行符
-		index = subprocess.run(sudo_cmd,
-		                       input=password.encode(),
-		                       stdout=subprocess.DEVNULL,
-		                       stderr=subprocess.DEVNULL
-		                       )
-		
-		# 密码正确
-		if not index.returncode:
-			if cmd:
-				sudo_cmd = ["sudo", "-S"] + [cmd]
-				password += "\n"  # 末尾添加换行符
-				index = subprocess.run(sudo_cmd, input=password.encode())
-				print(sudo_cmd)
-				print(index)
-			return 1
-		
-		print(failmsg)
-		# 没机会了（重试次数达到3次）
-		if i == 2:
-			print(failendmsg)
-			return 0
+class Linux:
+	@staticmethod
+	def check_root(msg: str):
+		# 获取当前进程的用户ID
+		uid = os.getuid()
+		if uid != 0:
+			raise SystemError(msg)
 
 
-def check_root(msg: str):
-	# 获取当前进程的用户ID
-	uid = os.getuid()
-	if uid != 0:
-		raise SystemError(msg)
-
-
-def pr(data):
-	if get_parent_process_name() == "pycharm":  # Mac上的pycharm的运行功能使用sys.stdout.write会看不见输出（windows上是pycharm32/64.exe）
-		print(data)
-	else:
-		sys.stdout.write(f"\r{data}")  # sys.stdout.flush()  # 刷新缓冲区，确保立即打印
+class Mac(Linux):
+	@staticmethod
+	def rootrun(
+			cmd: str,
+			getmeg="Password:",
+			failmsg="Sorry, try again.",
+			failendmsg="sudo: 3 incorrect password attempts"):
+		for i in range(4):
+			password = getpass.getpass(getmeg)
+			sudo_cmd = ["sudo", "-S", "-v"]
+			password += "\n"  # 末尾添加换行符
+			index = subprocess.run(sudo_cmd,
+			                       input=password.encode(),
+			                       stdout=subprocess.DEVNULL,
+			                       stderr=subprocess.DEVNULL
+			                       )
+			
+			# 密码正确
+			if not index.returncode:
+				if cmd:
+					sudo_cmd = ["sudo", "-S"] + [cmd]
+					password += "\n"  # 末尾添加换行符
+					index = subprocess.run(sudo_cmd, input=password.encode())
+					print(sudo_cmd)
+					print(index)
+				return 1
+			
+			print(failmsg)
+			# 没机会了（重试次数达到3次）
+			if i == 2:
+				print(failendmsg)
+				return 0
 
 
 def get_parent_process_name():  # 获取父进程名称
@@ -404,6 +402,13 @@ def get_parent_process_name():  # 获取父进程名称
 		return parent_process.name()
 	else:
 		return None
+
+
+def pr(data):
+	if get_parent_process_name() == "pycharm":  # Mac上的pycharm的运行功能使用sys.stdout.write会看不见输出（windows上是pycharm32/64.exe）
+		print(data)
+	else:
+		sys.stdout.write(f"\r{data}")  # sys.stdout.flush()  # 刷新缓冲区，确保立即打印
 
 
 def get_null_device():
@@ -428,3 +433,47 @@ def file_md5(file_path):
 	except OSError as e:
 		print(f"无法读取文件 {file_path}: {e}")
 		return None
+
+
+class Win:
+	@staticmethod
+	def hide_taskbar():
+		# 获取桌面窗口句柄
+		desktop_hwnd = ctypes.windll.user32.GetDesktopWindow()
+		
+		# 获取桌面窗口的子窗口句柄（通常是桌图标）
+		shell_hwnd = ctypes.windll.user32.FindWindowExW(desktop_hwnd, 0, "Shell_TrayWnd", None)
+		
+		if shell_hwnd:
+			# 隐藏桌面图标
+			ctypes.windll.user32.ShowWindow(shell_hwnd, 0)
+		else:
+			print("无法找到桌面图标的窗口句柄")
+	
+	@staticmethod
+	def show_taskbar():
+		# 获取桌面窗口句柄
+		desktop_hwnd = ctypes.windll.user32.GetDesktopWindow()
+		
+		# 获取桌面窗口的子窗口句柄（通常是桌图标）
+		shell_hwnd = ctypes.windll.user32.FindWindowExW(desktop_hwnd, 0, "Shell_TrayWnd", None)
+		
+		if shell_hwnd:
+			# 显示桌面图标
+			ctypes.windll.user32.ShowWindow(shell_hwnd, 1)
+		else:
+			print("无法找到桌面图标的窗口句柄")
+	
+	@staticmethod
+	def is_admin():
+		"""检查管理员权限"""
+		try:
+			return ctypes.windll.shell32.IsUserAnAdmin()
+		except:
+			return False
+	
+	@staticmethod
+	def restart_as_admin():
+		"""以管理员权限重启程序"""
+		ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+		sys.exit()

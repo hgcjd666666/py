@@ -1,7 +1,14 @@
+httpx
 requests
 psutil
 pygame
 urllib3
 pycryptodome
+docx
+fonttools
 pywin32
 WMI
+pillow
+tqdm
+PyAutoGUI
+gmssl
