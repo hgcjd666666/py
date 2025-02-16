@@ -2,16 +2,16 @@ import hashlib
 import os
 
 
-def calculate_md5(file_path):
-	"""计算文件的MD5哈希值"""
-	md5 = hashlib.md5()
+def calculate_md5(path):
+	"""计算文件的MD5哈希值，处理异常并返回None"""
+	hash_md5 = hashlib.md5()
 	try:
-		with open(file_path, 'rb') as f:
-			for chunk in iter(lambda: f.read(4096), b''):
-				md5.update(chunk)
-		return md5.hexdigest()
+		with open(path, "rb") as f:
+			for chunk in iter(lambda: f.read(4096), b""):
+				hash_md5.update(chunk)
+		return hash_md5.hexdigest()
 	except OSError as e:
-		print(f"无法读取文件 {file_path}: {e}")
+		print(f"计算MD5失败 {path}: {e}")
 		return None
 
 
@@ -34,8 +34,10 @@ def find_duplicate_files(directory):
 	
 	# 对相同大小文件进行MD5校验
 	duplicates = []
+	jump = calculated = int()
 	for size, paths in size_dict.items():
 		if len(paths) < 2:
+			jump += len(paths)
 			continue
 		
 		md5_dict = {}
@@ -43,12 +45,14 @@ def find_duplicate_files(directory):
 			md5 = calculate_md5(path)
 			if md5 is not None:
 				md5_dict.setdefault(md5, []).append(path)
+				calculated += 1
 		
 		for md5_group in md5_dict.values():
 			if len(md5_group) > 1:
-				sorted_group = sorted(md5_group, key=lambda x: len(x))
+				sorted_group = sorted(md5_group)
 				duplicates.append(sorted_group)
 	
+	print(f"MD5计算完成\n\t应计算{jump + calculated}个\n\t实际计算{calculated}个\n\t跳过了{jump:.3f}%的文件")
 	return duplicates
 
 
@@ -90,8 +94,8 @@ def delete_empty_folders(directory):
 
 if __name__ == "__main__":
 	choice = input("""功能列表：
-    [1] 查找重复文件
-    [2] 清理空文件夹
+	[1] 查找重复文件
+	[2] 清理空文件夹
 请选择一个功能使用：""")
 	
 	input_path = input("输入需要处理的路径：").strip()
