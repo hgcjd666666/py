@@ -5,3 +5,5 @@
 *.env
 /*.py.output/
 *.bak
+test.py
+1.py

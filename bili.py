@@ -1,7 +1,8 @@
-import os
 import json
-import subprocess
+import os
 import re
+import subprocess
+
 
 def bv_to_av(BV):  # 把BA号转为AV号
 	if BV.startswith("BV"):
@@ -29,6 +30,7 @@ def find_files(main_dir):
 		if "entry.json" in files:
 			entry_path = os.path.join(root, "entry.json")
 			yield entry_path
+
 
 def download_to_aac(download_dir):
 	output_dir = download_dir
@@ -81,5 +83,6 @@ def download_to_aac(download_dir):
 		except Exception as e:
 			print(f"❌ 发生未知错误：{str(e)}")
 
+
 download_to_aac(r"F:\download")
-#BA("BV17x411w7KC")  # av170001
+# BA("BV17x411w7KC")  # av170001

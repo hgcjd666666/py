@@ -245,26 +245,6 @@ def get_system():
 	return platform.platform().split("-")[0]
 
 
-"""
-def save(variable_name, variable_data=None):
-	is_self = False
-	try:
-		globals()[variable_name]
-	except KeyError:
-		if variable_data == None:  # 是私有变量并且未传人值则抛出异常
-			raise ValueError("变量为私有的并且为传入值")
-		is_self = True
-	folder_name = sys.argv[0] + ".save"
-	file_name = os.path.join(folder_name, variable_name)
-	os.makedirs(folder_name, exist_ok=True)
-	with open(file_name, "w") as f:
-		if is_self:
-			f.write(variable_data)
-		else:
-			f.write(globals()[variable_name])
-"""
-
-
 def save(*args, **kwargs):
 	folder_name = sys.argv[0] + ".data"  # 获取脚本名称并添加.data后缀
 	if len(args) == 2 and len(kwargs) == 0:
@@ -441,39 +421,96 @@ class Win:
 		# 获取桌面窗口句柄
 		desktop_hwnd = ctypes.windll.user32.GetDesktopWindow()
 		
-		# 获取桌面窗口的子窗口句柄（通常是桌图标）
+		# 获取桌面窗口的子窗口句柄
 		shell_hwnd = ctypes.windll.user32.FindWindowExW(desktop_hwnd, 0, "Shell_TrayWnd", None)
 		
 		if shell_hwnd:
-			# 隐藏桌面图标
+			# 隐藏任务栏
 			ctypes.windll.user32.ShowWindow(shell_hwnd, 0)
 		else:
-			print("无法找到桌面图标的窗口句柄")
+			print("无法找到任务栏的窗口句柄")
 	
 	@staticmethod
 	def show_taskbar():
 		# 获取桌面窗口句柄
 		desktop_hwnd = ctypes.windll.user32.GetDesktopWindow()
 		
-		# 获取桌面窗口的子窗口句柄（通常是桌图标）
+		# 获取桌面窗口的子窗口句柄
 		shell_hwnd = ctypes.windll.user32.FindWindowExW(desktop_hwnd, 0, "Shell_TrayWnd", None)
 		
 		if shell_hwnd:
-			# 显示桌面图标
+			# 显示任务栏
 			ctypes.windll.user32.ShowWindow(shell_hwnd, 1)
 		else:
-			print("无法找到桌面图标的窗口句柄")
+			print("无法找到任务栏的窗口句柄")
 	
 	@staticmethod
-	def is_admin():
-		"""检查管理员权限"""
+	def run_as_admin(command=None):
+		"""以管理员权限重启程序或执行命令"""
+		if command is not None:
+			# 如果传入命令，则运行该命令并返回结果
+			return ctypes.windll.shell32.ShellExecuteW(None, "open", "cmd.exe", f"/c {command}", None, 1)
+		elif not ctypes.windll.shell32.IsUserAnAdmin():
+			# 没传入命令并非管理员，提权
+			ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+			sys.exit()
+	
+	@staticmethod
+	def check_file_usage(file_path, process_list=None):
+		# 遍历所有进程
+		for proc in psutil.process_iter(["pid", "name", "exe"]):
+			try:
+				# 获取进程的打开文件句柄
+				if process_list is not None and proc.name() not in process_list:
+					continue  # 需要遍历的进程名单不为空且进程不在需要遍历的名单中则不打开句柄
+				files = proc.open_files()
+				if files:
+					for fila in files:
+						# 检查文件路径是否匹配
+						if os.path.normpath(fila.path) == os.path.normpath(file_path):
+							return proc.pid
+			except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+				# 忽略无法访问的进程
+				pass
+	
+	@staticmethod
+	def get_Edge_cookie():
+		import sqlite3
+		db_path = os.path.join(os.getenv("LOCALAPPDATA"), r"Microsoft\Edge\User Data\Default\Network\Cookies")
+		target_process = "msedge.exe"
+		
+		# 检查文件是否被占用
+		occupied_pid = None
+		for proc in psutil.process_iter(["pid", "name", "exe"]):
+			try:
+				if proc.name() == target_process:
+					for file in proc.open_files():
+						if os.path.normpath(file.path) == os.path.normpath(db_path):
+							occupied_pid = proc.pid
+							break
+			except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+				pass
+		
+		# 如果文件被占用，结束进程
+		if occupied_pid is not None:
+			try:
+				os.system(f"taskkill /F /PID {occupied_pid}")
+				print(f"已结束PID{occupied_pid}的{target_process}进程")
+			except Exception as e:
+				print(f"结束进程时出错: {e}")
+		else:
+			print("文件未被占用")
+		
+		# 尝试连接数据库并返回内容
 		try:
-			return ctypes.windll.shell32.IsUserAnAdmin()
-		except:
-			return False
-	
-	@staticmethod
-	def restart_as_admin():
-		"""以管理员权限重启程序"""
-		ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-		sys.exit()
+			with sqlite3.connect(db_path) as conn:
+				ret = ""
+				for line in conn.iterdump():
+					ret += f"{line}\n"
+				return ret[:-1]
+		except sqlite3.OperationalError as e:
+			print(f"数据库连接失败：{e}")
+			return None
+		except Exception as e:
+			print(f"操作失败：{e}")
+			return None
