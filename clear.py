@@ -30,6 +30,8 @@ def find_duplicate_files(directory):
 				except OSError as e:
 					print(f"获取文件大小失败 {path}: {e}")
 					continue
+				if size == 0:
+					continue  # 跳过空文件
 				size_dict.setdefault(size, []).append(path)
 	
 	# 对相同大小文件进行MD5校验
@@ -77,7 +79,7 @@ def delete_empty_folders(directory):
 	deleted_count = 0
 	directory = os.path.abspath(directory)
 	
-	# 自底向上遍历目录树（关键！）
+	# 自底向上遍历目录树，否包含空文件夹的文件夹不会被删除
 	for root, dirs, files in os.walk(directory, topdown=False):
 		for dir_name in dirs:
 			dir_path = os.path.join(root, dir_name)
